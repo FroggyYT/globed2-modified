@@ -1,0 +1,31 @@
+[package]
+name = "globed-game-server"
+version = "1.2.2"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+globed-shared = { path = "../shared" }
+globed-derive = { path = "../derive" }
+esp = { path = "../esp" }
+
+alloca = "0.4.0"
+ctrlc = "3.4.2"
+rustc-hash = "1.1.0"
+tokio = { version = "1.36.0", features = ["full"] }
+serde = { version = "1.0.197", features = ["serde_derive"] }
+serde_json = "1.0.114"
+futures-util = "0.3.30"
+
+[dev-dependencies]
+criterion = "0.5.1"
+
+[[bench]]
+name = "globed-bench"
+path = "benchmarks/bench.rs"
+harness = false
+
+[[test]]
+name = "globed-tests"
+path = "tests/test.rs"
