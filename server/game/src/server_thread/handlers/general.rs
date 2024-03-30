@@ -112,32 +112,47 @@ impl GameServerThread {
 
         let room_id = self.room_id.load(Ordering::Relaxed);
 
-        let level_count = self
+        let mut level_count = self
             .game_server
             .state
             .room_manager
             .with_any(room_id, |room| room.get_level_count());
+
+        let no_levels = level_count == 0;
+        let default_level: i64 = 97571110; // Minigames
+
+        level_count = 1;
 
         let encoded_size = size_of_types!(u32) + size_of_types!(GlobedLevel) * level_count;
 
         self.send_packet_alloca_with::<LevelListPacket, _>(encoded_size, |buf| {
             self.game_server.state.room_manager.with_any(room_id, |pm| {
                 buf.write_list_with(level_count, |buf| {
-                    pm.for_each_level(
-                        |(level_id, players), count, buf| {
-                            // skip editorcollab levels
-                            if count < level_count && !is_editorcollab_level(level_id) {
-                                buf.write_value(&GlobedLevel {
-                                    level_id,
-                                    player_count: players.len() as u16,
-                                });
-                                true
-                            } else {
-                                false
-                            }
-                        },
-                        buf,
-                    )
+                    if no_levels {
+                        buf.write_value(&GlobedLevel {
+                            level_id: default_level,
+                            player_count: 0 as u16,
+                        });
+                        1
+                    } else {
+                        pm.for_each_level(
+                            |(level_id, players), count, buf| {
+                                // skip editorcollab levels
+                                if count < level_count && !is_editorcollab_level(level_id) {
+                                    buf.write_value(&GlobedLevel {
+                                        // level_id,
+                                        level_id: default_level,
+                                        player_count: players.len() as u16,
+                                    });
+                                    true
+                                } else {
+                                    false
+                                }
+                            },
+                            buf,
+                        );
+                        1
+                    }
                 });
             });
         })
